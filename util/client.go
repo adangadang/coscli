@@ -4,10 +4,25 @@ import (
 	"fmt"
 	"github.com/tencentyun/cos-go-sdk-v5"
 	"net/http"
+	"net/url"
 	"time"
 )
 
 var secretID, secretKey, secretToken string
+
+func createTransport(proxy string, maxIdleConnsPerHost, maxIdleConns int) *http.Transport {
+	transport := &http.Transport{
+		MaxIdleConnsPerHost: maxIdleConnsPerHost,
+		MaxIdleConns:        maxIdleConns,
+	}
+	if proxy != "" {
+		proxyURL, err := url.Parse(proxy)
+		if err == nil {
+			transport.Proxy = http.ProxyURL(proxyURL)
+		}
+	}
+	return transport
+}
 
 // NewClient 创建一个新的客户端实例，根据配置文件加载信息。
 // 参数:
@@ -55,12 +70,18 @@ func NewClient(config *Config, param *Param, bucketName string, options ...*File
 		return client, fmt.Errorf("secretKey is missing")
 	}
 
+	proxy := param.Proxy
+	if proxy == "" {
+		proxy = config.Base.Proxy
+	}
+
 	if bucketName == "" { // 不指定 bucket，则创建用于发送 Service 请求的客户端
 		client = cos.NewClient(GenBaseURL(config, param), &http.Client{
 			Transport: &cos.AuthorizationTransport{
 				SecretID:     secretID,
 				SecretKey:    secretKey,
 				SessionToken: secretToken,
+				Transport:    createTransport(proxy, 0, 0),
 			},
 		})
 	} else {
@@ -83,10 +104,7 @@ func NewClient(config *Config, param *Param, bucketName string, options ...*File
 					SecretID:     secretID,
 					SecretKey:    secretKey,
 					SessionToken: secretToken,
-					Transport: &http.Transport{
-						MaxIdleConnsPerHost: longLinksNums,
-						MaxIdleConns:        longLinksNums,
-					},
+					Transport:    createTransport(proxy, longLinksNums, longLinksNums),
 				},
 			}
 		} else {
@@ -96,6 +114,7 @@ func NewClient(config *Config, param *Param, bucketName string, options ...*File
 					SecretID:     secretID,
 					SecretKey:    secretKey,
 					SessionToken: secretToken,
+					Transport:    createTransport(proxy, 0, 0),
 				},
 			}
 		}
@@ -177,11 +196,17 @@ func CreateClient(config *Config, param *Param, bucketIDName string) (client *co
 		protocol = param.Protocol
 	}
 
+	proxy := param.Proxy
+	if proxy == "" {
+		proxy = config.Base.Proxy
+	}
+
 	client = cos.NewClient(CreateURL(bucketIDName, protocol, param.Endpoint, false), &http.Client{
 		Transport: &cos.AuthorizationTransport{
 			SecretID:     secretID,
 			SecretKey:    secretKey,
 			SessionToken: secretToken,
+			Transport:    createTransport(proxy, 0, 0),
 		},
 	})
 

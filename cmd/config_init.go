@@ -76,6 +76,10 @@ func initConfigFile(cfgFlag bool) error {
 
 	fmt.Println("Disable automatic backup domain switching (CloseAutoSwitchHost)? (true/false, default: false):")
 	_, _ = fmt.Scanf("%s\n", &config.Base.CloseAutoSwitchHost)
+
+	fmt.Println("Input Proxy Address: (e.g., http://127.0.0.1:8080, leave blank for no proxy)")
+	_, _ = fmt.Scanf("%s\n", &config.Base.Proxy)
+
 	if len(config.Base.SessionToken) < 3 {
 		config.Base.SessionToken = ""
 	}

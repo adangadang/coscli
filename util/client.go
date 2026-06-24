@@ -20,6 +20,10 @@ func createTransport(proxy string, maxIdleConnsPerHost, maxIdleConns int) *http.
 		if err == nil {
 			transport.Proxy = http.ProxyURL(proxyURL)
 		}
+	} else {
+		transport.Proxy = func(*http.Request) (*url.URL, error) {
+			return nil, nil
+		}
 	}
 	return transport
 }
